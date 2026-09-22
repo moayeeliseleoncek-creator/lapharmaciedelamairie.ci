@@ -1,0 +1,442 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex, nofollow">
+<title>Tableau de bord — Pharmacie de la Mairie de Yopougon</title>
+<meta name="theme-color" content="#1F4D38">
+<link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">
+<link rel="icon" type="image/png" sizes="192x192" href="favicon-192.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="stylesheet" href="style.css">
+</head>
+<body class="admin-body">
+
+<div class="admin-topbar">
+  <div class="container">
+    <span class="logo">Espace administrateur</span>
+    <div class="admin-actions">
+      <a href="index.html">Voir le site</a>
+      <button id="logout-btn" type="button" class="btn btn-ghost">Se déconnecter</button>
+    </div>
+  </div>
+</div>
+
+<p id="etat-session" class="container etat-session">Vérification de la session…</p>
+
+<main class="admin-main" id="dashboard-main" hidden>
+  <div class="container">
+
+    <p id="admin-message" class="admin-message" role="status" hidden></p>
+
+    <!-- ===== Statut de garde ===== -->
+    <section class="admin-panel">
+      <h2>Statut de garde</h2>
+      <p class="panel-desc">Active ce bouton si la pharmacie est de garde aujourd'hui. Tous les visiteurs du site verront alors un bandeau défilant. Sinon, un message s'affiche en rouge. Pensez à le remettre sur « pas de garde » à la fin de la garde.</p>
+
+      <div class="garde-switch-row">
+        <label class="switch">
+          <input type="checkbox" id="garde-toggle" aria-label="Pharmacie de garde">
+          <span class="switch-track"></span>
+        </label>
+        <span id="garde-status" class="switch-status"></span>
+      </div>
+      <p id="garde-maj" class="garde-maj"></p>
+    </section>
+
+    <!-- ===== Ajouter un produit ===== -->
+    <section class="admin-panel">
+      <h2>Ajouter un produit</h2>
+      <p class="panel-desc">Ajoute l'image, le nom et le prix du produit. Il apparaîtra automatiquement sur la page « Produits » du site.</p>
+
+      <form id="produit-form">
+        <div class="product-form">
+          <div class="field">
+            <label for="produit-nom">Nom du produit</label>
+            <input type="text" id="produit-nom" maxlength="120" required>
+          </div>
+          <div class="field">
+            <label for="produit-prix">Prix (FCFA)</label>
+            <input type="number" id="produit-prix" min="0" step="1" required>
+          </div>
+          <div class="field field-full">
+            <label for="produit-image">Image du produit</label>
+            <input type="file" id="produit-image" accept="image/jpeg,image/png,image/webp">
+            <img id="image-preview" class="image-preview" style="margin-top:10px;" alt="Aperçu de l'image choisie" hidden>
+          </div>
+        </div>
+        <button type="submit" class="btn btn-primary">Ajouter le produit</button>
+      </form>
+    </section>
+
+    <!-- ===== Liste des produits ===== -->
+    <section class="admin-panel">
+      <h2>Produits existants</h2>
+      <p class="panel-desc">Supprime un produit (image, nom et prix) d'un seul clic.</p>
+      <div id="liste-produits" class="product-table"></div>
+    </section>
+
+  </div>
+</main>
+
+<script>
+// ===================================================
+// Client de l'API du back-end : envoie les requêtes au serveur (voir API-BACKEND.md).
+// ===================================================
+(function () {
+  'use strict';
+
+  // Adresse de l'API du back-end. À adapter si elle change
+  // (par exemple 'https://monsite.ci/api').
+  var URL_API = 'api';
+
+  function requete(methode, chemin, options) {
+    options = options || {};
+
+    var init = {
+      method: methode,
+      credentials: 'same-origin',
+      cache: 'no-store',
+      // En-tête envoyé sur toutes les requêtes : le back-end peut l'exiger
+      // pour les écritures (protection contre les requêtes venant d'un autre site).
+      headers: { 'X-Requested-With': 'fetch' }
+    };
+
+    if (options.json !== undefined) {
+      init.headers['Content-Type'] = 'application/json';
+      init.body = JSON.stringify(options.json);
+    } else if (options.formData) {
+      init.body = options.formData;
+    }
+
+    return fetch(URL_API + chemin, init)
+      .then(function (reponse) {
+        return reponse.json().catch(function () { return null; }).then(function (data) {
+          if (!reponse.ok || data === null || typeof data !== 'object') {
+            var message = (data && data.erreur) ||
+              'Le serveur a répondu de façon inattendue (code ' + reponse.status + ').';
+            var erreur = new Error(message);
+            erreur.status = reponse.status;
+            throw erreur;
+          }
+          return data;
+        });
+      });
+  }
+
+  window.PharmacieAPI = {
+    // GET /chemin
+    lire: function (chemin) {
+      return requete('GET', chemin);
+    },
+    // POST / PUT / DELETE /chemin, avec un corps JSON facultatif
+    envoyer: function (methode, chemin, donnees) {
+      return requete(methode, chemin, donnees === undefined ? {} : { json: donnees });
+    },
+    // POST /chemin avec un formulaire (fichiers)
+    envoyerFormulaire: function (chemin, formData) {
+      return requete('POST', chemin, { formData: formData });
+    }
+  };
+})();
+</script>
+
+<script>
+// ===================================================
+// Tableau de bord (session vérifiée par le serveur)
+// ===================================================
+(function () {
+  'use strict';
+
+  function allerALaConnexion() {
+    window.location.href = 'login.html';
+  }
+
+  /* ---------- Page dashboard.html ---------- */
+
+  var zoneMessage = null;
+  var minuteurMessage = null;
+
+  function afficherMessage(texte, estErreur) {
+    if (!zoneMessage) return;
+    zoneMessage.textContent = texte;
+    zoneMessage.className = 'admin-message' + (estErreur ? ' error' : '');
+    zoneMessage.hidden = false;
+    clearTimeout(minuteurMessage);
+    if (!estErreur) {
+      minuteurMessage = setTimeout(function () { zoneMessage.hidden = true; }, 4000);
+    }
+  }
+
+  // Gère une erreur venant de l'API : session expirée => retour au login.
+  function traiterErreur(e) {
+    if (e && e.status === 401) {
+      allerALaConnexion();
+      return;
+    }
+    afficherMessage((e && e.message) || 'Une erreur est survenue.', true);
+  }
+
+  function formaterPrix(prix) {
+    var nombre = Number(prix);
+    return isFinite(nombre) ? nombre.toLocaleString('fr-FR') : String(prix);
+  }
+
+  function formaterDate(iso) {
+    if (!iso) return '';
+    var date = new Date(iso);
+    if (isNaN(date.getTime())) return '';
+    return date.toLocaleString('fr-FR', { dateStyle: 'full', timeStyle: 'short' });
+  }
+
+  /* --- Interrupteur de garde --- */
+
+  function initGarde() {
+    var interrupteur = document.getElementById('garde-toggle');
+    var statut = document.getElementById('garde-status');
+    var maj = document.getElementById('garde-maj');
+
+    function afficher(donnees) {
+      interrupteur.checked = !!donnees.garde;
+      statut.textContent = donnees.garde ? 'Pharmacie DE GARDE' : 'Pharmacie pas de garde';
+      statut.className = 'switch-status ' + (donnees.garde ? 'on' : 'off');
+      var date = formaterDate(donnees.maj);
+      maj.textContent = date ? 'Dernière modification : ' + date : '';
+    }
+
+    interrupteur.disabled = true;
+    PharmacieAPI.lire('/garde')
+      .then(function (donnees) {
+        afficher(donnees);
+        interrupteur.disabled = false;
+      })
+      .catch(traiterErreur);
+
+    interrupteur.addEventListener('change', function () {
+      var voulu = interrupteur.checked;
+      interrupteur.disabled = true;
+
+      PharmacieAPI.envoyer('PUT', '/garde', { garde: voulu })
+        .then(function (donnees) {
+          afficher(donnees);
+          afficherMessage(donnees.garde
+            ? 'Le site affiche maintenant : pharmacie DE GARDE.'
+            : 'Le site affiche maintenant : pas de garde aujourd\u2019hui.', false);
+        })
+        .catch(function (e) {
+          interrupteur.checked = !voulu; // on remet l'ancien état
+          traiterErreur(e);
+        })
+        .then(function () { interrupteur.disabled = false; });
+    });
+  }
+
+  /* --- Liste des produits --- */
+
+  function initListeProduits() {
+    var conteneur = document.getElementById('liste-produits');
+
+    function message(texte) {
+      conteneur.textContent = '';
+      var p = document.createElement('p');
+      p.className = 'empty-state';
+      p.textContent = texte;
+      conteneur.appendChild(p);
+    }
+
+    function ligne(produit) {
+      var rang = document.createElement('div');
+      rang.className = 'product-row';
+
+      if (produit.image) {
+        var img = document.createElement('img');
+        img.src = produit.image;
+        img.alt = produit.nom;
+        rang.appendChild(img);
+      } else {
+        var vide = document.createElement('span');
+        vide.className = 'thumb-vide';
+        rang.appendChild(vide);
+      }
+
+      var nom = document.createElement('span');
+      nom.className = 'p-name';
+      nom.textContent = produit.nom;
+      rang.appendChild(nom);
+
+      var prix = document.createElement('span');
+      prix.className = 'p-price';
+      prix.textContent = formaterPrix(produit.prix) + ' FCFA';
+      rang.appendChild(prix);
+
+      var supprimer = document.createElement('button');
+      supprimer.type = 'button';
+      supprimer.className = 'btn-delete';
+      supprimer.textContent = 'Supprimer';
+      supprimer.addEventListener('click', function () {
+        if (!window.confirm('Supprimer « ' + produit.nom + ' » ?')) return;
+        supprimer.disabled = true;
+        PharmacieAPI.envoyer('DELETE', '/produits/' + encodeURIComponent(produit.id))
+          .then(function () {
+            afficherMessage('Produit supprimé.', false);
+            rafraichir();
+          })
+          .catch(function (e) {
+            supprimer.disabled = false;
+            traiterErreur(e);
+          });
+      });
+      rang.appendChild(supprimer);
+
+      return rang;
+    }
+
+    function rafraichir() {
+      return PharmacieAPI.lire('/produits')
+        .then(function (donnees) {
+          var produits = Array.isArray(donnees.produits) ? donnees.produits : [];
+          if (produits.length === 0) {
+            message('Aucun produit ajouté pour l\u2019instant.');
+            return;
+          }
+          conteneur.textContent = '';
+          produits.forEach(function (produit) { conteneur.appendChild(ligne(produit)); });
+        })
+        .catch(function (e) {
+          message('Impossible de charger la liste des produits.');
+          traiterErreur(e);
+        });
+    }
+
+    rafraichir();
+    return rafraichir;
+  }
+
+  /* --- Ajout d'un produit --- */
+
+  // Réduit la photo avant l'envoi (les photos de téléphone font souvent
+  // plusieurs Mo). Si la réduction échoue, on envoie le fichier d'origine.
+  function reduireImage(fichier, coteMax, qualite) {
+    return new Promise(function (resolve) {
+      if (!fichier.type || fichier.type.indexOf('image/') !== 0) {
+        resolve(fichier);
+        return;
+      }
+      var adresse = URL.createObjectURL(fichier);
+      var img = new Image();
+
+      img.onload = function () {
+        var ratio = Math.min(1, coteMax / Math.max(img.width, img.height));
+        var canvas = document.createElement('canvas');
+        canvas.width = Math.max(1, Math.round(img.width * ratio));
+        canvas.height = Math.max(1, Math.round(img.height * ratio));
+        var contexte = canvas.getContext('2d');
+        contexte.fillStyle = '#ffffff'; // fond blanc pour les PNG transparents
+        contexte.fillRect(0, 0, canvas.width, canvas.height);
+        contexte.drawImage(img, 0, 0, canvas.width, canvas.height);
+        URL.revokeObjectURL(adresse);
+        canvas.toBlob(function (blob) { resolve(blob || fichier); }, 'image/jpeg', qualite);
+      };
+      img.onerror = function () {
+        URL.revokeObjectURL(adresse);
+        resolve(fichier);
+      };
+      img.src = adresse;
+    });
+  }
+
+  function initFormulaireProduit(rafraichirListe) {
+    var formulaire = document.getElementById('produit-form');
+    var champImage = document.getElementById('produit-image');
+    var apercu = document.getElementById('image-preview');
+    var bouton = formulaire.querySelector('button[type="submit"]');
+    var adresseApercu = null;
+
+    function viderApercu() {
+      if (adresseApercu) URL.revokeObjectURL(adresseApercu);
+      adresseApercu = null;
+      apercu.removeAttribute('src');
+      apercu.hidden = true;
+    }
+
+    champImage.addEventListener('change', function () {
+      viderApercu();
+      var fichier = champImage.files[0];
+      if (!fichier) return;
+      adresseApercu = URL.createObjectURL(fichier);
+      apercu.src = adresseApercu;
+      apercu.hidden = false;
+    });
+
+    formulaire.addEventListener('submit', function (evenement) {
+      evenement.preventDefault();
+
+      var nom = document.getElementById('produit-nom').value.trim();
+      var prix = document.getElementById('produit-prix').value.trim();
+      if (!nom || !prix) return;
+
+      bouton.disabled = true;
+      var fichier = champImage.files[0];
+
+      var preparation = fichier ? reduireImage(fichier, 900, 0.85) : Promise.resolve(null);
+
+      preparation
+        .then(function (image) {
+          var donnees = new FormData();
+          donnees.append('nom', nom);
+          donnees.append('prix', prix);
+          if (image) donnees.append('image', image, 'produit.jpg');
+          return PharmacieAPI.envoyerFormulaire('/produits', donnees);
+        })
+        .then(function () {
+          formulaire.reset();
+          viderApercu();
+          afficherMessage('Produit ajouté : il est visible sur la page Produits.', false);
+          return rafraichirListe();
+        })
+        .catch(traiterErreur)
+        .then(function () { bouton.disabled = false; });
+    });
+  }
+
+  /* --- Démarrage du tableau de bord --- */
+
+  function initDashboard() {
+    var principal = document.getElementById('dashboard-main');
+    if (!principal) return;
+
+    var etat = document.getElementById('etat-session');
+    zoneMessage = document.getElementById('admin-message');
+
+    document.getElementById('logout-btn').addEventListener('click', function () {
+      PharmacieAPI.envoyer('POST', '/logout')
+        .catch(function () { /* on quitte la page dans tous les cas */ })
+        .then(allerALaConnexion);
+    });
+
+    // Le contenu reste caché tant que le serveur n'a pas confirmé la session.
+    PharmacieAPI.lire('/session')
+      .then(function (donnees) {
+        if (!donnees.connecte) {
+          allerALaConnexion();
+          return;
+        }
+        etat.hidden = true;
+        principal.hidden = false;
+        initGarde();
+        var rafraichirListe = initListeProduits();
+        initFormulaireProduit(rafraichirListe);
+      })
+      .catch(function () {
+        etat.textContent = 'Impossible de joindre le serveur (l\u2019API du back-end est-elle en ligne ?). Rechargez la page dans un moment.';
+      });
+  }
+
+  document.addEventListener('DOMContentLoaded', function () {
+    initDashboard();
+  });
+})();
+</script>
+</body>
+</html>
