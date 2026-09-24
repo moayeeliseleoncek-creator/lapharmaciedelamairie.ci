@@ -598,6 +598,46 @@ section { padding: 64px 0; }
 .card p + img:first-of-type,
 .card p + video:first-of-type { margin-top: 14px; }
 
+/* ---------- Médias des cartes de service (.card-media) ----------
+   Bloc unique en haut de carte qui regroupe 1, 2 ou 3 médias
+   (photos et/ou vidéo) dans une grille au ratio homogène.
+   data-count="1|2|3" pilote la disposition. Sélecteurs volontairement
+   plus spécifiques que ".card img" ci-dessus pour neutraliser ses marges
+   et éviter tout conflit, quel que soit l'ordre dans la feuille. */
+.card-media {
+  display: grid;
+  gap: 6px;
+  margin: 0 0 16px;
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.card-media[data-count="1"] { grid-template-columns: 1fr; }
+.card-media[data-count="2"] { grid-template-columns: 1fr 1fr; }
+.card-media[data-count="3"] { grid-template-columns: 1fr 1fr; }
+.card-media[data-count="3"] > :first-child { grid-column: 1 / -1; }
+
+.card .card-media img,
+.card .card-media video,
+.card .card-media-video {
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  object-fit: cover;
+  display: block;
+  margin: 0;
+  border-radius: 0;
+}
+
+.card-media-video { position: relative; background: var(--vert-fonce); }
+
+/* Le bloc média déborde jusqu'aux bords de la carte, comme une photo
+   d'en-tête, plutôt que de rester encadré par le padding du texte. */
+.card > .card-media:first-child {
+  margin: -26px -26px 16px;
+  width: calc(100% + 52px);
+  border-radius: 6px 6px 0 0;
+}
+
 /* Cartes du catalogue produits */
 .card.card-produit img {
   margin: 0 0 14px;
@@ -611,6 +651,92 @@ section { padding: 64px 0; }
 }
 
 .section-alt { background: var(--fond-alt); }
+
+/* ---------- Carrousel vidéo (« La pharmacie en vidéo », accueil) ---------- */
+.galerie-pharmacie {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 16px;
+  margin: 28px 0 36px;
+}
+
+.galerie-pharmacie figure {
+  margin: 0;
+  overflow: hidden;
+  border-radius: 10px;
+  background: #fff;
+  box-shadow: 0 5px 18px rgba(31, 77, 56, .12);
+}
+
+.galerie-pharmacie img {
+  display: block;
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  object-fit: cover;
+  transition: transform .25s ease;
+}
+
+.galerie-pharmacie figure:hover img { transform: scale(1.04); }
+
+.galerie-pharmacie figcaption {
+  padding: 11px 12px;
+  color: var(--vert-fonce);
+  font-weight: 600;
+  text-align: center;
+}
+
+.video-carousel {
+  max-width: 760px;
+  margin: 0 auto;
+}
+
+@media (max-width: 760px) {
+  .galerie-pharmacie { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+}
+
+.video-carousel-media {
+  display: none;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  border-radius: 8px;
+  background: var(--vert-fonce);
+}
+
+.video-carousel-media.active { display: block; }
+
+.video-carousel-titre {
+  margin: 14px 0 0;
+  text-align: center;
+  color: var(--vert-fonce);
+  font-family: var(--serif);
+  font-size: 1.05rem;
+}
+
+.video-carousel-puces {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  margin-top: 16px;
+}
+
+.video-carousel-puce {
+  width: 11px;
+  height: 11px;
+  padding: 0;
+  border-radius: 50%;
+  border: 1.5px solid var(--vert);
+  background: transparent;
+  cursor: pointer;
+}
+
+.video-carousel-puce:hover { background: var(--vert-doux); border-color: var(--vert-doux); }
+
+.video-carousel-puce.active { background: var(--vert); }
+
+.video-carousel-puce:focus-visible {
+  outline: 2px solid var(--vert);
+  outline-offset: 3px;
+}
 
 .empty-state {
   grid-column: 1 / -1;
@@ -637,6 +763,123 @@ section { padding: 64px 0; }
 .page-hero p {
   color: var(--marron);
   margin: 10px 0 0;
+}
+
+
+/* ---------- Recherche et filtres du catalogue ---------- */
+.barre-filtres {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 18px;
+  margin-bottom: 12px;
+  padding: 20px;
+  background: var(--blanc);
+  border: 1px solid var(--fond-alt);
+  border-radius: 8px;
+}
+.barre-filtres label {
+  display: block;
+  margin-bottom: 7px;
+  color: var(--vert-fonce);
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+.barre-filtres input,
+.barre-filtres select {
+  width: 100%;
+  min-height: 44px;
+  padding: 10px 12px;
+  border: 1.5px solid var(--fond-alt);
+  border-radius: 6px;
+  background: var(--fond);
+  color: var(--texte);
+  font-family: var(--sans);
+  font-size: 0.95rem;
+}
+.barre-filtres input:focus,
+.barre-filtres select:focus {
+  outline: none;
+  border-color: var(--vert);
+  box-shadow: 0 0 0 3px rgba(47, 107, 79, 0.10);
+}
+.compteur-produits {
+  min-height: 24px;
+  margin: 0 0 18px;
+  color: var(--marron);
+  font-size: 0.85rem;
+}
+.badge-categorie,
+.p-category {
+  display: inline-block;
+  width: fit-content;
+  padding: 4px 9px;
+  border-radius: 999px;
+  background: var(--fond-alt);
+  color: var(--vert-fonce);
+  border: 1px solid var(--vert-doux);
+  font-size: 0.72rem;
+  font-weight: 600;
+  line-height: 1.2;
+}
+.card-produit .badge-categorie { margin: 0 0 9px; }
+
+.description-produit {
+  color: var(--marron);
+  font-size: 0.88rem;
+  margin: 0 0 10px;
+}
+
+.badge-stock {
+  display: inline-block;
+  width: fit-content;
+  padding: 4px 9px;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  line-height: 1.2;
+  margin: 0 0 10px;
+}
+.badge-stock.en-stock {
+  background: #E8F3EC;
+  color: var(--vert-fonce);
+  border: 1px solid var(--vert-doux);
+}
+.badge-stock.rupture {
+  background: #FDECEA;
+  color: var(--rouge);
+  border: 1px solid var(--rouge);
+}
+
+/* ---------- Conseils santé ---------- */
+.voir-tous-services { margin: 24px 0 0; text-align: center; }
+.conseils-intro {
+  max-width: 760px;
+  margin: 0 0 32px;
+  color: var(--marron);
+  font-size: 1.02rem;
+}
+.conseils-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 28px;
+}
+.conseil-card { position: relative; min-height: 100%; }
+.conseil-card h2 {
+  font-family: var(--serif);
+  color: var(--vert-fonce);
+  font-size: 1.25rem;
+  margin: 0 0 12px;
+}
+.conseil-card p { margin: 0 0 10px; }
+.conseil-card p:last-child { margin-bottom: 0; }
+.conseil-numero {
+  display: inline-block;
+  margin-bottom: 12px;
+  color: var(--marron-clair);
+  font-family: var(--serif);
+  font-size: 0.9rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
 }
 
 /* ---------- Page Localisation ---------- */
@@ -1074,41 +1317,109 @@ a:focus-visible, button:focus-visible, input:focus-visible {
   padding-bottom: 40px;
 }
 
-.login-wrap {
-  min-height: 100vh;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: var(--vert-fonce);
-  padding: 24px;
-}
-
-.login-card {
-  background: var(--blanc);
-  padding: 40px 36px;
-  border-radius: 8px;
-  width: 100%;
+.panel.login {
   max-width: 380px;
+  margin: 72px auto;
+  background: var(--blanc);
+  padding: 36px 32px;
+  border-radius: 8px;
   border-top: 4px solid var(--vert);
 }
 
-.login-card h1 {
+.panel.login h1 {
   font-family: var(--serif);
   color: var(--vert-fonce);
   font-size: 1.5rem;
   margin: 0 0 6px;
 }
 
-.login-card p.subtitle { color: var(--marron); margin: 0 0 28px; font-size: 0.9rem; }
+.panel.login > p:first-of-type { color: var(--marron); margin: 0 0 20px; font-size: 0.9rem; }
 
-.login-card .retour {
+.firebase-status {
+  font-size: 0.8rem;
+  color: var(--marron-clair);
+  margin: 0 0 18px;
+}
+.firebase-status.error { color: var(--rouge); }
+
+.panel.login label {
   display: block;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--texte);
+  margin: 14px 0 6px;
+}
+
+.panel.login input {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1.5px solid var(--fond-alt);
+  border-radius: 6px;
+  font-family: var(--sans);
+  font-size: 0.95rem;
+  background: var(--fond);
+}
+.panel.login input:focus { outline: none; border-color: var(--vert); }
+
+.panel.login button[type="submit"] {
+  display: block;
+  width: 100%;
+  margin-top: 22px;
+  padding: 12px 20px;
+  border-radius: 6px;
+  border: 1.5px solid var(--vert);
+  background: var(--vert);
+  color: var(--blanc);
+  font-weight: 600;
+  font-size: 0.95rem;
+  font-family: var(--sans);
+  cursor: pointer;
+}
+.panel.login button[type="submit"]:hover { background: var(--vert-fonce); border-color: var(--vert-fonce); }
+.panel.login button[type="submit"]:disabled { opacity: 0.6; cursor: wait; }
+
+.panel.login .message.erreur {
+  background: #FDECEA;
+  color: var(--rouge);
+  padding: 10px 14px;
+  border-radius: 6px;
+  font-size: 0.88rem;
+  margin-top: 16px;
+}
+
+.panel.login .message.succes {
+  background: #E6F4EA;
+  color: var(--vert-fonce);
+  padding: 10px 14px;
+  border-radius: 6px;
+  font-size: 0.88rem;
+  margin-top: 16px;
+}
+
+.panel.login .btn-lien {
+  display: block;
+  width: 100%;
+  margin-top: 14px;
+  padding: 0;
+  background: none;
+  border: none;
+  color: var(--marron);
+  font-size: 0.85rem;
+  text-decoration: underline;
+  text-align: center;
+  cursor: pointer;
+  font-family: var(--sans);
+}
+.panel.login .btn-lien:hover { color: var(--vert-fonce); }
+.panel.login .btn-lien:disabled { opacity: 0.6; cursor: wait; }
+
+.panel.login > p:last-of-type {
   margin-top: 20px;
   text-align: center;
   font-size: 0.88rem;
-  color: var(--marron);
 }
-.login-card .retour:hover { color: var(--vert-fonce); }
+.panel.login > p:last-of-type a { color: var(--marron); }
+.panel.login > p:last-of-type a:hover { color: var(--vert-fonce); }
 
 .field { margin-bottom: 18px; }
 
@@ -1255,7 +1566,7 @@ a:focus-visible, button:focus-visible, input:focus-visible {
 
 .product-row {
   display: grid;
-  grid-template-columns: 64px 1fr auto auto;
+  grid-template-columns: minmax(150px, 1fr) auto auto auto auto;
   align-items: center;
   gap: 16px;
   padding: 12px;
@@ -1264,16 +1575,8 @@ a:focus-visible, button:focus-visible, input:focus-visible {
   border-left: 3px solid var(--vert);
 }
 
-.product-row img,
-.product-row .thumb-vide {
-  width: 64px;
-  height: 64px;
-  object-fit: cover;
-  border-radius: 6px;
-  background: var(--fond-alt);
-}
-
-.product-row .p-name { font-weight: 600; }
+.product-row .p-name { font-weight: 600; min-width: 0; }
+.product-row .p-category { justify-self: start; }
 .product-row .p-price { color: var(--marron); font-weight: 600; white-space: nowrap; }
 
 .btn-delete {
@@ -1293,10 +1596,182 @@ a:focus-visible, button:focus-visible, input:focus-visible {
 .product-table .empty-state { grid-column: auto; }
 
 @media (max-width: 640px) {
+  .barre-filtres { grid-template-columns: 1fr; padding: 16px; }
+  .conseils-grid { grid-template-columns: 1fr; }
   .product-form { grid-template-columns: 1fr; }
-  .product-row { grid-template-columns: 48px 1fr; grid-template-rows: auto auto; }
-  .product-row img,
-  .product-row .thumb-vide { width: 48px; height: 48px; }
-  .product-row .p-price { grid-column: 2; }
-  .product-row .btn-delete { grid-column: 2; justify-self: start; }
+  .product-row { grid-template-columns: 1fr; grid-template-rows: auto auto auto auto; }
+  .product-row .p-price { justify-self: start; }
+  .product-row .p-category { justify-self: start; }
+  .product-row .stock-control-admin { justify-self: start; }
+  .product-row .btn-delete { justify-self: start; }
+}
+
+
+/* =========================================
+   NOTRE ÉQUIPE
+========================================= */
+
+.equipe-section {
+    padding: 70px 20px;
+    background: var(--fond-alt);
+}
+
+.equipe-section .section-intro {
+    max-width: 760px;
+    margin: 0 auto 45px;
+    text-align: center;
+}
+
+.equipe-section .section-intro h2 {
+    margin: 8px 0 15px;
+    color: var(--vert-fonce);
+    font-family: var(--serif);
+}
+
+.equipe-section .section-intro p {
+    line-height: 1.7;
+}
+
+.equipe-grid {
+    max-width: 1100px;
+    margin: 0 auto;
+
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 24px;
+}
+
+.equipe-card {
+    overflow: hidden;
+    background: var(--blanc);
+    border-radius: 16px;
+
+    border: 1px solid rgba(0, 0, 0, 0.08);
+
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.08);
+
+    transition:
+        transform 0.25s ease,
+        box-shadow 0.25s ease;
+}
+
+.equipe-card:hover {
+    transform: translateY(-5px);
+
+    box-shadow: 0 14px 30px rgba(0, 0, 0, 0.12);
+}
+
+.equipe-photo-wrap {
+    width: 100%;
+    height: 260px;
+    overflow: hidden;
+    background: var(--vert-doux);
+}
+
+.equipe-photo {
+    width: 100%;
+    height: 100%;
+
+    display: block;
+
+    object-fit: cover;
+}
+
+.equipe-info {
+    padding: 20px;
+    text-align: center;
+}
+
+.equipe-info h3 {
+    margin: 0 0 7px;
+
+    color: var(--vert-fonce);
+    font-family: var(--serif);
+    font-size: 1.25rem;
+}
+
+.equipe-info p {
+    margin: 0;
+
+    color: #666;
+    font-size: 0.95rem;
+}
+
+
+/* =========================================
+   RESPONSIVE
+========================================= */
+
+@media (max-width: 900px) {
+    .equipe-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (max-width: 560px) {
+    .equipe-section {
+        padding: 50px 16px;
+    }
+
+    .equipe-grid {
+        grid-template-columns: 1fr;
+        max-width: 380px;
+    }
+
+    .equipe-photo-wrap {
+        height: 300px;
+    }
+}
+/* =========================
+   CONTROLE STOCK PRODUITS
+========================= */
+.stock-control-admin {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  min-width: 118px;
+}
+
+.switch.switch-small {
+  width: 46px;
+  height: 25px;
+}
+
+.switch.switch-small .switch-track {
+  background: #e7e7e7;
+  border: 2px solid #cfcfcf;
+  box-shadow: inset 0 1px 2px rgba(0,0,0,.08);
+}
+
+.switch.switch-small .switch-track::before {
+  width: 17px;
+  height: 17px;
+  left: 2px;
+  top: 2px;
+  background: #fff;
+  box-shadow: 0 1px 3px rgba(0,0,0,.2);
+}
+
+/* Produit disponible : interrupteur clairement vert */
+.switch.switch-small input:checked + .switch-track {
+  background: #22a447;
+  border-color: #22a447;
+}
+
+.switch.switch-small input:checked + .switch-track::before {
+  transform: translateX(21px);
+}
+
+.stock-admin-label {
+  font-size: .82rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.stock-admin-label.is-on {
+  color: #16843a;
+}
+
+.stock-admin-label.is-off {
+  color: #a33a3a;
 }

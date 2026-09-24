@@ -1,158 +1,21 @@
-<!DOCTYPE html>
-<html lang="fr">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="robots" content="noindex, nofollow">
-<title>Connexion admin — Pharmacie de la Mairie de Yopougon</title>
-<meta name="theme-color" content="#1F4D38">
-<link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">
-<link rel="icon" type="image/png" sizes="192x192" href="favicon-192.png">
-<link rel="apple-touch-icon" href="apple-touch-icon.png">
-<link rel="stylesheet" href="style.css">
-</head>
-<body class="admin-body">
+<!doctype html>
+<html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Administration — Pharmacie de la Mairie</title><link rel="stylesheet" href="style.css"></head>
+<body><main class="container"><section class="panel login">
+<h1>Administration</h1><p>Connexion sécurisée à l’espace administrateur</p>
+<div id="firebase-status" class="firebase-status" role="status">Initialisation de la connexion…</div>
+<form id="login-form">
+<label for="email">E-mail administrateur</label><input id="email" type="email" required autocomplete="username">
+<label for="password">Mot de passe</label><input id="password" type="password" required autocomplete="current-password">
+<p id="login-error" class="message erreur" hidden></p>
+<p id="reset-message" class="message" hidden></p>
+<button type="submit">Se connecter</button>
+<button type="button" id="reset-password-btn" class="btn-lien">Mot de passe oublié ?</button>
+</form><p><a href="produits.html">← Retour au catalogue</a></p>
+</section></main>
 
-<div class="login-wrap">
-  <div class="login-card">
-    <h1>Espace administrateur</h1>
-    <p class="subtitle">Pharmacie de la Mairie de Yopougon</p>
-
-    <p class="error-msg" id="login-error" role="alert"></p>
-
-    <form id="login-form">
-      <div class="field">
-        <label for="identifiant">Identifiant</label>
-        <input type="text" id="identifiant" name="identifiant" autocomplete="username" required>
-      </div>
-      <div class="field">
-        <label for="motdepasse">Mot de passe</label>
-        <input type="password" id="motdepasse" name="motdepasse" autocomplete="current-password" required>
-      </div>
-      <button type="submit" class="btn btn-primary btn-block">Se connecter</button>
-    </form>
-
-    <a class="retour" href="index.html">← Retour au site</a>
-  </div>
-</div>
-
-<script>
-// ===================================================
-// Client de l'API du back-end : envoie les requêtes au serveur (voir API-BACKEND.md).
-// ===================================================
-(function () {
-  'use strict';
-
-  // Adresse de l'API du back-end. À adapter si elle change
-  // (par exemple 'https://monsite.ci/api').
-  var URL_API = 'api';
-
-  function requete(methode, chemin, options) {
-    options = options || {};
-
-    var init = {
-      method: methode,
-      credentials: 'same-origin',
-      cache: 'no-store',
-      // En-tête envoyé sur toutes les requêtes : le back-end peut l'exiger
-      // pour les écritures (protection contre les requêtes venant d'un autre site).
-      headers: { 'X-Requested-With': 'fetch' }
-    };
-
-    if (options.json !== undefined) {
-      init.headers['Content-Type'] = 'application/json';
-      init.body = JSON.stringify(options.json);
-    } else if (options.formData) {
-      init.body = options.formData;
-    }
-
-    return fetch(URL_API + chemin, init)
-      .then(function (reponse) {
-        return reponse.json().catch(function () { return null; }).then(function (data) {
-          if (!reponse.ok || data === null || typeof data !== 'object') {
-            var message = (data && data.erreur) ||
-              'Le serveur a répondu de façon inattendue (code ' + reponse.status + ').';
-            var erreur = new Error(message);
-            erreur.status = reponse.status;
-            throw erreur;
-          }
-          return data;
-        });
-      });
-  }
-
-  window.PharmacieAPI = {
-    // GET /chemin
-    lire: function (chemin) {
-      return requete('GET', chemin);
-    },
-    // POST / PUT / DELETE /chemin, avec un corps JSON facultatif
-    envoyer: function (methode, chemin, donnees) {
-      return requete(methode, chemin, donnees === undefined ? {} : { json: donnees });
-    },
-    // POST /chemin avec un formulaire (fichiers)
-    envoyerFormulaire: function (chemin, formData) {
-      return requete('POST', chemin, { formData: formData });
-    }
-  };
-})();
-</script>
-
-<script>
-// ===================================================
-// Page de connexion (aucun identifiant ici : la vérification se fait sur le serveur)
-// ===================================================
-(function () {
-  'use strict';
-
-  /* ---------- Page login.html ---------- */
-
-  function initLogin() {
-    var formulaire = document.getElementById('login-form');
-    if (!formulaire) return;
-
-    var erreur = document.getElementById('login-error');
-    var bouton = formulaire.querySelector('button[type="submit"]');
-
-    function montrerErreur(texte) {
-      erreur.textContent = texte;
-      erreur.classList.add('show');
-    }
-
-    // Déjà connecté ? on va directement au tableau de bord.
-    PharmacieAPI.lire('/session')
-      .then(function (donnees) {
-        if (donnees.connecte) window.location.href = 'dashboard.html';
-      })
-      .catch(function () { /* le message d'erreur s'affichera à la connexion */ });
-
-    formulaire.addEventListener('submit', function (evenement) {
-      evenement.preventDefault();
-      erreur.classList.remove('show');
-      bouton.disabled = true;
-
-      PharmacieAPI.envoyer('POST', '/login', {
-        identifiant: document.getElementById('identifiant').value.trim(),
-        motdepasse: document.getElementById('motdepasse').value
-      })
-        .then(function () {
-          window.location.href = 'dashboard.html';
-        })
-        .catch(function (e) {
-          bouton.disabled = false;
-          if (e.status === 401 || e.status === 429) {
-            montrerErreur(e.message);
-          } else {
-            montrerErreur('Connexion impossible : le serveur ne répond pas correctement (l\u2019API du back-end est-elle en ligne ?).');
-          }
-        });
-    });
-  }
-
-  document.addEventListener('DOMContentLoaded', function () {
-    initLogin();
-  });
-})();
-</script>
-</body>
-</html>
+<script src="https://www.gstatic.com/firebasejs/10.13.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.2/firebase-firestore-compat.js"></script>
+<script src="script.js"></script>
+</body></html>
