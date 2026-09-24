@@ -26,6 +26,29 @@
 
 * { box-sizing: border-box; }
 
+/* Réinitialise l'apparence native des champs et boutons (surtout
+   visible sur Chrome mobile / Android, où input/select/button gardent
+   sinon leur style système au lieu du design du site). */
+input,
+select,
+textarea,
+button {
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+  font-family: inherit;
+  font-size: inherit;
+  margin: 0;
+}
+
+select {
+  background-image: url("data:image/svg+xml;charset=UTF-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20'%3E%3Cpath fill='%236B4A3A' d='M5.5 7.5l4.5 5 4.5-5z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  background-size: 14px;
+  padding-right: 34px;
+}
+
 html { scroll-behavior: smooth; }
 
 /* Un élément avec l'attribut hidden doit vraiment disparaître,
