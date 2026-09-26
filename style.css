@@ -966,26 +966,6 @@ section { padding: 64px 0; }
 
 .video-carousel-media.active { display: block; }
 
-.video-carousel-son {
-  display: block;
-  margin: 14px auto 0;
-  width: 42px;
-  height: 38px;
-  padding: 0;
-  border: 1.5px solid var(--vert);
-  border-radius: 6px;
-  background: transparent;
-  color: var(--vert-fonce);
-  cursor: pointer;
-  font-family: var(--sans);
-  font-weight: 600;
-}
-
-.video-carousel-son:hover {
-  background: var(--vert-doux);
-  color: var(--blanc);
-}
-
 .video-carousel-titre {
   margin: 14px 0 0;
   text-align: center;
@@ -1090,6 +1070,80 @@ section { padding: 64px 0; }
   color: var(--marron);
   font-size: 0.85rem;
 }
+.suggestions-produits {
+  max-height: 220px;
+  margin-top: 4px;
+  overflow-y: auto;
+  border: 1px solid var(--fond-alt);
+  border-radius: 6px;
+  background: var(--blanc);
+  box-shadow: 0 5px 14px rgba(31, 77, 56, 0.12);
+}
+.suggestion-produit {
+  display: block;
+  width: 100%;
+  padding: 10px 12px;
+  border: 0;
+  border-bottom: 1px solid var(--fond-alt);
+  background: transparent;
+  color: var(--texte);
+  font-family: var(--sans);
+  font-size: 0.9rem;
+  text-align: left;
+  cursor: pointer;
+}
+.suggestion-produit:last-child { border-bottom: 0; }
+.suggestion-produit:hover,
+.suggestion-produit.active { background: var(--fond-alt); color: var(--vert-fonce); }
+.historique-recherches { margin-top: 10px; }
+.historique-recherches-entete,
+.historique-recherches-liste li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+.historique-recherches-entete {
+  margin-bottom: 5px;
+  color: var(--vert-fonce);
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+.historique-recherches-liste {
+  display: grid;
+  gap: 3px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.historique-recherches-terme,
+.historique-recherches-supprimer,
+.historique-recherches-effacer {
+  padding: 4px 0;
+  border: 0;
+  background: transparent;
+  color: var(--vert-fonce);
+  font-family: var(--sans);
+  cursor: pointer;
+}
+.historique-recherches-terme {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  text-align: left;
+}
+.historique-recherches-effacer {
+  color: var(--marron);
+  font-size: 0.78rem;
+  white-space: nowrap;
+}
+.historique-recherches-supprimer {
+  color: #b42318;
+  font-size: 1.2rem;
+  line-height: 1;
+}
+.historique-recherches-terme:hover,
+.historique-recherches-supprimer:hover,
+.historique-recherches-effacer:hover { text-decoration: underline; }
 .badge-categorie,
 .p-category {
   display: inline-block;
