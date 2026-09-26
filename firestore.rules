@@ -1,0 +1,62 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function estAdmin() {
+      return request.auth != null && request.auth.token.admin == true;
+    }
+
+    match /produits/{produitId} {
+      allow read: if true;
+      allow create: if estAdmin()
+        && request.resource.data.keys().hasOnly([
+          'nom', 'prix', 'categorie', 'description', 'disponible', 'creeLe'
+        ])
+        && request.resource.data.nom is string
+        && request.resource.data.nom.size() > 0
+        && request.resource.data.nom.size() <= 120
+        && request.resource.data.prix is number
+        && request.resource.data.prix >= 0
+        && request.resource.data.categorie in [
+          'Médicaments', 'Parapharmacie', 'Bébé', 'Beauté',
+          'Orthopédie', 'Vétérinaire', 'Hygiène', 'Autres'
+        ]
+        && request.resource.data.description is string
+        && request.resource.data.description.size() <= 500
+        && request.resource.data.disponible is bool;
+      allow update: if estAdmin()
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+          'nom', 'prix', 'categorie', 'description', 'disponible'
+        ])
+        && request.resource.data.keys().hasOnly([
+          'nom', 'prix', 'categorie', 'description', 'disponible', 'creeLe'
+        ])
+        && request.resource.data.nom is string
+        && request.resource.data.nom.size() > 0
+        && request.resource.data.nom.size() <= 120
+        && request.resource.data.prix is number
+        && request.resource.data.prix >= 0
+        && request.resource.data.categorie in [
+          'Médicaments', 'Parapharmacie', 'Bébé', 'Beauté',
+          'Orthopédie', 'Vétérinaire', 'Hygiène', 'Autres'
+        ]
+        && request.resource.data.description is string
+        && request.resource.data.description.size() <= 500
+        && request.resource.data.disponible is bool;
+      allow delete: if estAdmin();
+    }
+
+    match /config/{documentId} {
+      allow read: if documentId == 'garde';
+      allow write: if documentId == 'garde'
+        && estAdmin()
+        && request.resource.data.keys().hasOnly(['active', 'maj'])
+        && request.resource.data.active is bool
+        && request.resource.data.maj == request.time;
+    }
+
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

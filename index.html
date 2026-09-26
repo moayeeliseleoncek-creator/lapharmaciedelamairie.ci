@@ -2,7 +2,7 @@
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=devic e-width, initial-scale=1.0">
 <title>Pharmacie de la Mairie de Yopougon — Votre santé, notre priorité</title>
 <meta name="description" content="Pharmacie de la Mairie de Yopougon, quartier Selmer : médicaments, conseils santé, orthopédie, contention et espace vétérinaire. Ouverte du lundi au samedi et les jours de garde.">
 <meta name="theme-color" content="#1F4D38">
@@ -23,6 +23,7 @@
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
+<script src="chargement.js"></script>
 
 <div id="garde-banner" role="status"></div>
 
@@ -62,8 +63,10 @@
       <p class="hero-eyebrow">Depuis 2002 à Yopougon</p>
       <h1>Votre santé, notre priorité</h1>
       <p>La Pharmacie de la Mairie vous accueille à Selmer, à deux pas de la mairie de Yopougon, pour vos médicaments, vos conseils santé et le bien-être de toute la famille.</p>
-      <a href="contact.html" class="btn btn-primary">Nous contacter</a>
-      <a href="localisation.html" class="btn btn-secondary">Voir l'itinéraire</a>
+      <div class="hero-actions">
+        <a href="contact.html" class="btn btn-primary">Nous contacter</a>
+        <a href="localisation.html" class="btn btn-secondary">Voir l'itinéraire</a>
+      </div>
     </div>
     <div class="hero-visual">
       <img src="perso1.jpeg" alt="La pharmacie et son équipe" class="hero-visual-img active">
@@ -164,7 +167,7 @@
       <video class="video-carousel-media" controls muted playsinline preload="metadata" poster="video3-affiche.jpg" >
         <source src="facade2.mp4" type="video/mp4">
       </video>
-     
+      <button type="button" class="video-carousel-son" id="video-carousel-son" aria-label="Activer le son" title="Activer le son" aria-pressed="false">&#128266;</button>
       <p class="video-carousel-titre" id="video-carousel-titre"></p>
       <div class="video-carousel-puces" id="video-carousel-puces"></div>
     </div>

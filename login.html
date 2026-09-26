@@ -1,21 +1,27 @@
 <!doctype html>
-<html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Administration — Pharmacie de la Mairie</title><link rel="stylesheet" href="style.css"></head>
-<body><main class="container"><section class="panel login">
-<h1>Administration</h1><p>Connexion sécurisée à l’espace administrateur</p>
-<div id="firebase-status" class="firebase-status" role="status">Initialisation de la connexion…</div>
-<form id="login-form">
-<label for="email">E-mail administrateur</label><input id="email" type="email" required autocomplete="username">
-<label for="password">Mot de passe</label><input id="password" type="password" required autocomplete="current-password">
-<p id="login-error" class="message erreur" hidden></p>
-<p id="reset-message" class="message" hidden></p>
-<button type="submit">Se connecter</button>
-<button type="button" id="reset-password-btn" class="btn-lien">Mot de passe oublié ?</button>
-</form><p><a href="produits.html">← Retour au catalogue</a></p>
-</section></main>
+<html lang="fr"><head><meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Administration — Pharmacie de la Mairie</title>
+<link rel="stylesheet" href="style.css"></head>
+<body>
+    <script src="chargement.js"></script>
+    <main class="container">
+        <section class="panel login">
+            <h1>Administration</h1>
+            <form id="login-form">
+            <label for="email">E-mail administrateur</label><input id="email" type="email" required autocomplete="username" maxlength="100">
+            <label for="password">Mot de passe</label><input id="password" type="password" required autocomplete="current-password">
+            <p id="login-error" class="message erreur" hidden></p>
+            <p id="reset-message" class="message" hidden></p>
+            <button type="submit">Se connecter</button>
+            <button type="button" id="reset-password-btn" class="btn-lien">Mot de passe oublié ?</button>
+            </form><p><a href="produits.html">← Retour au catalogue</a></p>
+       </section>
+    </main>
 
-<script src="https://www.gstatic.com/firebasejs/10.13.2/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.13.2/firebase-auth-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.13.2/firebase-firestore-compat.js"></script>
-<script src="script.js"></script>
-</body></html>
+    <script src="https://www.gstatic.com/firebasejs/10.13.2/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.13.2/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.13.2/firebase-firestore-compat.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>

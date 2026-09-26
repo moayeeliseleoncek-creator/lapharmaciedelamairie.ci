@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex, nofollow">
+<title>Modifier un produit - Pharmacie de la Mairie</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body class="admin-body">
+<script src="chargement.js"></script>
+
+<div class="admin-topbar">
+  <div class="container">
+    <span class="logo">Modifier un produit</span>
+    <div class="admin-actions">
+      <a href="dashboard.html">Retour au tableau de bord</a>
+      <button id="logout-btn" type="button" class="btn btn-ghost btn-logout" aria-label="Se déconnecter" title="Se déconnecter">
+        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 17l5-5-5-5"/><path d="M15 12H3"/><path d="M12 3h6a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-6"/></svg>
+      </button>
+    </div>
+  </div>
+</div>
+
+<p id="etat-session" class="container etat-session">Vérification de la session...</p>
+
+<main class="admin-main" id="modifier-produit-main" hidden>
+  <div class="container">
+    <section class="admin-panel admin-edit-panel">
+      <h1>Modifier le produit</h1>
+      <p id="modifier-message" class="admin-message" role="status" hidden></p>
+
+      <form id="modifier-produit-form">
+        <div class="product-form">
+          <div class="field">
+            <label for="modifier-nom">Nom du produit</label>
+            <input type="text" id="modifier-nom" maxlength="120" required>
+          </div>
+          <div class="field">
+            <label for="modifier-prix">Prix (FCFA)</label>
+            <input type="number" id="modifier-prix" min="0" step="1" required>
+          </div>
+          <div class="field">
+            <label for="modifier-categorie">Catégorie</label>
+            <select id="modifier-categorie" required>
+              <option value="">Choisir une catégorie</option>
+              <option value="Médicaments">Médicaments</option>
+              <option value="Parapharmacie">Parapharmacie</option>
+              <option value="Bébé">Bébé</option>
+              <option value="Beauté">Beauté</option>
+              <option value="Orthopédie">Orthopédie</option>
+              <option value="Vétérinaire">Vétérinaire</option>
+              <option value="Hygiène">Hygiène</option>
+              <option value="Autres">Autres</option>
+            </select>
+          </div>
+          <div class="field field-full">
+            <label for="modifier-description">Description</label>
+            <textarea id="modifier-description" maxlength="500" rows="4"></textarea>
+          </div>
+          <div class="field">
+            <label class="stock-label" for="modifier-stock">Disponibilité en stock</label>
+            <label class="switch switch-small">
+              <input type="checkbox" id="modifier-stock" aria-label="Produit disponible en stock">
+              <span class="switch-track"></span>
+            </label>
+            <span id="modifier-stock-label" class="stock-admin-label"></span>
+          </div>
+        </div>
+        <button type="submit" class="btn btn-primary">Enregistrer les modifications</button>
+      </form>
+    </section>
+  </div>
+</main>
+
+<script src="https://www.gstatic.com/firebasejs/10.13.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.2/firebase-firestore-compat.js"></script>
+<script src="script.js"></script>
+</body>
+</html>

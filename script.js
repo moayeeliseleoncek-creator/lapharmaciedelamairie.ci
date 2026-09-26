@@ -7,6 +7,18 @@
 (function () {
   'use strict';
 
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('service-worker.js').catch(function (erreur) {
+      console.warn('Le mode hors ligne n\u2019a pas pu être activé :', erreur);
+    });
+  }
+
+  window.addEventListener('offline', function () {
+    if (window.location.pathname.split('/').pop() !== 'hors-ligne.html') {
+      window.location.href = 'hors-ligne.html';
+    }
+  });
+
   /* ===================================================
      Connexion à Firebase (configuration du projet)
      =================================================== */
@@ -28,8 +40,6 @@
 
   var auth = firebase.auth();
   var db = firebase.firestore();
-  window.auth = auth;
-  window.db = db;
 
   /* ===================================================
      Menu de navigation (version mobile) — toutes les pages publiques
@@ -87,7 +97,7 @@
     } else {
       bandeau.className = 'garde-banner inactive';
       texte.className = 'message-fixe';
-      texte.textContent = 'La pharmacie n\u2019est pas de garde aujourd\u2019hui.';
+      texte.textContent = '';
     }
 
     bandeau.textContent = '';
@@ -303,10 +313,21 @@
     var carrousel = document.getElementById('video-carousel');
     var titreEl = document.getElementById('video-carousel-titre');
     var puces = document.getElementById('video-carousel-puces');
+    var boutonSon = document.getElementById('video-carousel-son');
     var videos = carrousel ? carrousel.querySelectorAll('.video-carousel-media') : [];
     if (!carrousel || !puces || !videos.length) return;
 
     var actuelle = 0;
+    var sonActive = false;
+
+    function mettreAJourBoutonSon() {
+      if (!boutonSon) return;
+      var libelle = sonActive ? 'Couper le son' : 'Activer le son';
+      boutonSon.textContent = sonActive ? '\uD83D\uDD07' : '\uD83D\uDD0A';
+      boutonSon.setAttribute('aria-label', libelle);
+      boutonSon.title = libelle;
+      boutonSon.setAttribute('aria-pressed', sonActive ? 'true' : 'false');
+    }
 
     function afficher(index, lireAuto) {
       var precedente = videos[actuelle];
@@ -314,6 +335,7 @@
 
       actuelle = index;
       var video = videos[actuelle];
+      video.muted = !sonActive;
 
       Array.prototype.forEach.call(videos, function (v, i) {
         v.classList.toggle('active', i === actuelle);
@@ -347,6 +369,16 @@
       });
     });
 
+    if (boutonSon) {
+      boutonSon.addEventListener('click', function () {
+        sonActive = !sonActive;
+        videos[actuelle].muted = !sonActive;
+        mettreAJourBoutonSon();
+        if (sonActive) videos[actuelle].play().catch(function () {});
+      });
+    }
+
+    mettreAJourBoutonSon();
     afficher(0, false);
   }
 
@@ -503,20 +535,13 @@
     var zoneReset = document.getElementById('reset-message');
     var boutonReset = document.getElementById('reset-password-btn');
     var bouton = formulaire.querySelector('button[type="submit"]');
-    var zoneEtat = document.getElementById('firebase-status');
-
-    function afficherEtat(texte, erreur) {
-      if (!zoneEtat) return;
-      zoneEtat.textContent = texte;
-      zoneEtat.className = 'firebase-status' + (erreur ? ' error' : '');
-    }
 
     function messageErreur(code) {
       switch (code) {
         case 'auth/invalid-email':       return 'Adresse e-mail invalide.';
-        case 'auth/user-disabled':       return 'Ce compte a été désactivé.';
-        case 'auth/user-not-found':      return 'Aucun compte ne correspond à cet e-mail.';
-        case 'auth/wrong-password':      return 'Mot de passe incorrect.';
+        case 'auth/user-disabled':       return 'E-mail ou mot de passe incorrect.';
+        case 'auth/user-not-found':      return 'E-mail ou mot de passe incorrect.';
+        case 'auth/wrong-password':      return 'E-mail ou mot de passe incorrect.';
         case 'auth/invalid-credential':  return 'E-mail ou mot de passe incorrect.';
         case 'auth/too-many-requests':   return 'Trop de tentatives. Réessayez dans quelques minutes.';
         case 'auth/network-request-failed': return 'Connexion internet impossible. Vérifiez votre réseau puis réessayez.';
@@ -527,15 +552,11 @@
     }
 
     auth.setPersistence(firebase.auth.Auth.Persistence.SESSION).catch(function () {});
-    afficherEtat('Service de connexion prêt.');
 
     // Déjà connecté ? On file directement au tableau de bord.
     auth.onAuthStateChanged(function (utilisateur) {
       if (utilisateur) {
-        afficherEtat('Session administrateur détectée.');
         window.location.href = 'dashboard.html';
-      } else {
-        afficherEtat('Service de connexion prêt.');
       }
     });
 
@@ -611,7 +632,7 @@
     }
 
     function traiterErreur(e) {
-      afficherMessage((e && e.message) || 'Une erreur est survenue.', true);
+      afficherMessage('Opération impossible. Vérifiez votre connexion et vos droits.', true);
     }
 
     function formaterDate(timestamp) {
@@ -767,6 +788,13 @@
         });
         rang.appendChild(supprimer);
 
+        var modifier = document.createElement('a');
+        modifier.className = 'btn-edit';
+        modifier.href = 'modifier-produit.html?id=' + encodeURIComponent(produit.id);
+        modifier.textContent = 'Modifier';
+        modifier.setAttribute('aria-label', 'Modifier ' + (produit.nom || 'ce produit'));
+        rang.appendChild(modifier);
+
         return rang;
       }
 
@@ -829,12 +857,17 @@
         var categorie = document.getElementById('produit-categorie').value.trim();
         var description = champDescription.value.trim();
         var disponible = champStock.checked;
-        if (!nom || !prix || !categorie) return;
+        var prixNumerique = Number(prix);
+        var categoriesAutorisees = ['Médicaments', 'Parapharmacie', 'Bébé', 'Beauté', 'Orthopédie', 'Vétérinaire', 'Hygiène', 'Autres'];
+        if (!nom || !Number.isFinite(prixNumerique) || prixNumerique < 0 || !categoriesAutorisees.includes(categorie)) {
+          afficherMessage('Vérifiez le nom, le prix et la catégorie du produit.', true);
+          return;
+        }
         bouton.disabled = true;
 
         db.collection('produits').add({
           nom: nom,
-          prix: Number(prix),
+          prix: prixNumerique,
           categorie: categorie,
           description: description,
           disponible: disponible,
@@ -878,6 +911,106 @@
     });
   }
 
+  /* --- Modification d'un produit (modifier-produit.html) --- */
+
+  function initModifierProduit() {
+    var principal = document.getElementById('modifier-produit-main');
+    var formulaire = document.getElementById('modifier-produit-form');
+    if (!principal || !formulaire) return;
+
+    var etat = document.getElementById('etat-session');
+    var message = document.getElementById('modifier-message');
+    var champNom = document.getElementById('modifier-nom');
+    var champPrix = document.getElementById('modifier-prix');
+    var champCategorie = document.getElementById('modifier-categorie');
+    var champDescription = document.getElementById('modifier-description');
+    var champStock = document.getElementById('modifier-stock');
+    var labelStock = document.getElementById('modifier-stock-label');
+    var bouton = formulaire.querySelector('button[type="submit"]');
+    var boutonDeconnexion = document.getElementById('logout-btn');
+    var produitId = new URLSearchParams(window.location.search).get('id');
+    var categoriesAutorisees = ['Médicaments', 'Parapharmacie', 'Bébé', 'Beauté', 'Orthopédie', 'Vétérinaire', 'Hygiène', 'Autres'];
+
+    function afficherMessage(texte, erreur) {
+      message.textContent = texte;
+      message.className = 'admin-message' + (erreur ? ' error' : '');
+      message.hidden = false;
+    }
+
+    function afficherStock() {
+      labelStock.textContent = champStock.checked ? 'Disponible' : 'Rupture de stock';
+      labelStock.className = 'stock-admin-label ' + (champStock.checked ? 'is-on' : 'is-off');
+    }
+
+    function allerALaConnexion() {
+      window.location.href = 'login.html';
+    }
+
+    if (boutonDeconnexion) {
+      boutonDeconnexion.addEventListener('click', function () {
+        auth.signOut().then(allerALaConnexion).catch(allerALaConnexion);
+      });
+    }
+
+    if (!produitId) {
+      afficherMessage('Produit introuvable.', true);
+      return;
+    }
+
+    auth.onAuthStateChanged(function (utilisateur) {
+      if (!utilisateur) {
+        allerALaConnexion();
+        return;
+      }
+
+      db.collection('produits').doc(produitId).get()
+        .then(function (documentProduit) {
+          if (!documentProduit.exists) throw new Error('Produit introuvable');
+          var produit = documentProduit.data() || {};
+          champNom.value = produit.nom || '';
+          champPrix.value = typeof produit.prix === 'number' ? produit.prix : '';
+          champCategorie.value = produit.categorie || '';
+          champDescription.value = produit.description || '';
+          champStock.checked = produit.disponible !== false;
+          afficherStock();
+          etat.hidden = true;
+          principal.hidden = false;
+        })
+        .catch(function () {
+          afficherMessage('Impossible de charger ce produit.', true);
+        });
+    });
+
+    champStock.addEventListener('change', afficherStock);
+
+    formulaire.addEventListener('submit', function (evenement) {
+      evenement.preventDefault();
+      var prix = Number(champPrix.value);
+      var donnees = {
+        nom: champNom.value.trim(),
+        prix: prix,
+        categorie: champCategorie.value,
+        description: champDescription.value.trim(),
+        disponible: champStock.checked
+      };
+
+      if (!donnees.nom || !Number.isFinite(prix) || prix < 0 || !categoriesAutorisees.includes(donnees.categorie)) {
+        afficherMessage('Vérifiez le nom, le prix et la catégorie du produit.', true);
+        return;
+      }
+
+      bouton.disabled = true;
+      db.collection('produits').doc(produitId).update(donnees)
+        .then(function () {
+          afficherMessage('Produit modifié avec succès.', false);
+        })
+        .catch(function () {
+          afficherMessage('Modification impossible. Vérifiez vos droits et votre connexion.', true);
+        })
+        .then(function () { bouton.disabled = false; });
+    });
+  }
+
   /* ===================================================
      Démarrage : chaque fonction se désactive elle-même
      si la page ne contient pas les éléments nécessaires.
@@ -892,5 +1025,6 @@
     initProduits();
     initLogin();
     initDashboard();
+    initModifierProduit();
   });
 })();

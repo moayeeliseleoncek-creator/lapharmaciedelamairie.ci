@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#1F4D38">
+<meta name="robots" content="noindex, nofollow">
+<title>Hors ligne - Pharmacie de la Mairie</title>
+<style>
+  * { box-sizing: border-box; }
+  body {
+    min-height: 100vh;
+    margin: 0;
+    display: grid;
+    place-items: center;
+    padding: 24px;
+    background: #f2f5ef;
+    color: #26352d;
+    font-family: Georgia, 'Times New Roman', serif;
+    line-height: 1.55;
+  }
+  main {
+    width: min(100%, 560px);
+    padding: 40px 32px;
+    border-top: 4px solid #b42318;
+    background: #fff;
+    text-align: center;
+    box-shadow: 0 18px 45px rgba(31, 77, 56, .12);
+  }
+  .symbole {
+    display: grid;
+    width: 56px;
+    height: 56px;
+    margin: 0 auto 24px;
+    place-items: center;
+    border: 2px solid #b42318;
+    border-radius: 50%;
+    background: #fff1f0;
+    color: #b42318;
+    font: 700 25px/1 Arial, sans-serif;
+  }
+  h1 { margin: 0 0 20px; color: #a61b1b; font-size: 2rem; line-height: 1.2; }
+  .message-erreur {
+    margin: 0 0 24px;
+    padding: 16px 18px;
+    border: 1px solid #f2b8b5;
+    border-left: 4px solid #b42318;
+    background: #fff5f4;
+    color: #8f1d18;
+    text-align: left;
+  }
+  button {
+    min-height: 46px;
+    padding: 10px 20px;
+    border: 0;
+    background: #1f4d38;
+    color: #fff;
+    font: 600 1rem Arial, sans-serif;
+    cursor: pointer;
+  }
+  button:hover { background: #173c2a; }
+  button:focus-visible { outline: 3px solid #b7663d; outline-offset: 3px; }
+  @media (max-width: 480px) { main { padding: 32px 20px; } }
+</style>
+</head>
+<body>
+<main>
+  <div class="symbole" aria-hidden="true">!</div>
+  <h1>Vous êtes hors ligne</h1>
+  <p class="message-erreur" role="alert">La connexion Internet semble interrompue. Vérifiez votre réseau, puis réessayez d’accéder au site.</p>
+  <button type="button" onclick="window.location.reload()">Réessayer</button>
+</main>
+</body>
+</html>
