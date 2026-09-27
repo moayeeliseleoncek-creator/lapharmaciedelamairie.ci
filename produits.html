@@ -70,7 +70,15 @@
     <div class="barre-filtres" aria-label="Recherche et filtre des produits">
       <div class="champ-recherche">
         <label for="recherche-produit">Rechercher un produit</label>
-        <input type="search" id="recherche-produit" placeholder="Nom du produit..." autocomplete="off">
+        <input type="search" id="recherche-produit" placeholder="Nom du produit..." autocomplete="off" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="suggestions-produits">
+        <div class="suggestions-produits" id="suggestions-produits" role="listbox" aria-label="Suggestions de produits" hidden></div>
+        <div class="historique-recherches" id="historique-recherches" hidden>
+          <div class="historique-recherches-entete">
+            <span>Recherches récentes</span>
+            <button type="button" class="historique-recherches-effacer" id="effacer-historique">Tout effacer</button>
+          </div>
+          <ul class="historique-recherches-liste" id="liste-historique-recherches"></ul>
+        </div>
       </div>
       <div class="champ-categorie">
         <label for="filtre-categorie">Catégorie</label>

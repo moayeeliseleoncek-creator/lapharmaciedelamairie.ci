@@ -313,21 +313,10 @@
     var carrousel = document.getElementById('video-carousel');
     var titreEl = document.getElementById('video-carousel-titre');
     var puces = document.getElementById('video-carousel-puces');
-    var boutonSon = document.getElementById('video-carousel-son');
     var videos = carrousel ? carrousel.querySelectorAll('.video-carousel-media') : [];
     if (!carrousel || !puces || !videos.length) return;
 
     var actuelle = 0;
-    var sonActive = false;
-
-    function mettreAJourBoutonSon() {
-      if (!boutonSon) return;
-      var libelle = sonActive ? 'Couper le son' : 'Activer le son';
-      boutonSon.textContent = sonActive ? '\uD83D\uDD07' : '\uD83D\uDD0A';
-      boutonSon.setAttribute('aria-label', libelle);
-      boutonSon.title = libelle;
-      boutonSon.setAttribute('aria-pressed', sonActive ? 'true' : 'false');
-    }
 
     function afficher(index, lireAuto) {
       var precedente = videos[actuelle];
@@ -335,7 +324,6 @@
 
       actuelle = index;
       var video = videos[actuelle];
-      video.muted = !sonActive;
 
       Array.prototype.forEach.call(videos, function (v, i) {
         v.classList.toggle('active', i === actuelle);
@@ -369,16 +357,6 @@
       });
     });
 
-    if (boutonSon) {
-      boutonSon.addEventListener('click', function () {
-        sonActive = !sonActive;
-        videos[actuelle].muted = !sonActive;
-        mettreAJourBoutonSon();
-        if (sonActive) videos[actuelle].play().catch(function () {});
-      });
-    }
-
-    mettreAJourBoutonSon();
     afficher(0, false);
   }
 
@@ -409,17 +387,101 @@
     if (!conteneur) return;
 
     var recherche = document.getElementById('recherche-produit');
+    var suggestions = document.getElementById('suggestions-produits');
+    var zoneHistorique = document.getElementById('historique-recherches');
+    var listeHistorique = document.getElementById('liste-historique-recherches');
+    var boutonEffacerHistorique = document.getElementById('effacer-historique');
     var filtreCategorie = document.getElementById('filtre-categorie');
     var compteur = document.getElementById('compteur-produits');
     var tousLesProduits = [];
+    var historique = [];
+    var cleHistorique = 'pharmacie-recherches-produits';
+    var suggestionActive = -1;
 
     function normaliser(texte) {
       return String(texte || '').toLocaleLowerCase('fr-FR')
         .normalize('NFD').replace(/[\u0300-\u036f]/g, '');
     }
 
+    function enregistrerHistorique() {
+      var terme = String(recherche ? recherche.value : '').trim();
+      if (!terme) return;
+      historique = historique.filter(function (ancien) {
+        return normaliser(ancien) !== normaliser(terme);
+      });
+      historique.unshift(terme);
+      historique = historique.slice(0, 8);
+      try {
+        localStorage.setItem(cleHistorique, JSON.stringify(historique));
+      } catch (e) {}
+      afficherHistorique();
+    }
+
+    function afficherHistorique() {
+      if (!zoneHistorique || !listeHistorique) return;
+      listeHistorique.textContent = '';
+      zoneHistorique.hidden = historique.length === 0;
+      historique.forEach(function (terme, index) {
+        var ligne = document.createElement('li');
+        var boutonRecherche = document.createElement('button');
+        boutonRecherche.type = 'button';
+        boutonRecherche.className = 'historique-recherches-terme';
+        boutonRecherche.textContent = terme;
+        boutonRecherche.addEventListener('click', function () {
+          recherche.value = terme;
+          fermerSuggestions();
+          filtrer();
+          recherche.focus();
+        });
+
+        var boutonSupprimer = document.createElement('button');
+        boutonSupprimer.type = 'button';
+        boutonSupprimer.className = 'historique-recherches-supprimer';
+        boutonSupprimer.textContent = '×';
+        boutonSupprimer.setAttribute('aria-label', 'Retirer la recherche ' + terme);
+        boutonSupprimer.addEventListener('click', function () {
+          historique.splice(index, 1);
+          sauvegarderHistorique();
+          afficherHistorique();
+        });
+
+        ligne.appendChild(boutonRecherche);
+        ligne.appendChild(boutonSupprimer);
+        listeHistorique.appendChild(ligne);
+      });
+    }
+
+    function sauvegarderHistorique() {
+      try {
+        localStorage.setItem(cleHistorique, JSON.stringify(historique));
+      } catch (e) {}
+    }
+
+    function chargerHistorique() {
+      try {
+        var donnees = JSON.parse(localStorage.getItem(cleHistorique) || '[]');
+        if (Array.isArray(donnees)) {
+          historique = donnees.filter(function (terme) {
+            return typeof terme === 'string' && terme.trim();
+          }).slice(0, 8);
+        }
+      } catch (e) {
+        historique = [];
+      }
+      afficherHistorique();
+    }
+
     function remplirCategories() {
-      var categories = {};
+      var categories = {
+        'Médicaments': true,
+        'Parapharmacie': true,
+        'Bébé': true,
+        'Beauté': true,
+        'Orthopédie': true,
+        'Vétérinaire': true,
+        'Hygiène': true,
+        'Autres': true
+      };
       tousLesProduits.forEach(function (produit) {
         var categorie = String(produit.categorie || '').trim();
         if (categorie) categories[categorie] = true;
@@ -491,8 +553,141 @@
       afficher(resultats);
     }
 
-    if (recherche) recherche.addEventListener('input', filtrer);
-    if (filtreCategorie) filtreCategorie.addEventListener('change', filtrer);
+    function selectionnerProduit(nom) {
+      recherche.value = nom;
+      fermerSuggestions();
+      filtrer();
+      enregistrerHistorique();
+      recherche.focus();
+
+      var titres = conteneur.querySelectorAll('.card-produit h3');
+      Array.prototype.some.call(titres, function (titre) {
+        if (normaliser(titre.textContent) !== normaliser(nom)) return false;
+        titre.parentElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        return true;
+      });
+    }
+
+    function fermerSuggestions() {
+      if (!suggestions) return;
+      suggestions.hidden = true;
+      suggestions.textContent = '';
+      suggestionActive = -1;
+      recherche.setAttribute('aria-expanded', 'false');
+      recherche.removeAttribute('aria-activedescendant');
+    }
+
+    function mettreAJourSuggestions() {
+      if (!recherche || !suggestions) return;
+      var terme = normaliser(recherche.value.trim());
+      suggestions.textContent = '';
+      suggestionActive = -1;
+      if (!terme) {
+        fermerSuggestions();
+        return;
+      }
+
+      var dejaAjoutes = {};
+      var correspondances = tousLesProduits.filter(function (produit) {
+        var nom = String(produit.nom || '').trim();
+        var cleNom = normaliser(nom);
+        var categorieCorrespond = !filtreCategorie || !filtreCategorie.value ||
+          String(produit.categorie || '') === filtreCategorie.value;
+        if (!nom || dejaAjoutes[cleNom] || !categorieCorrespond || cleNom.indexOf(terme) === -1) return false;
+        dejaAjoutes[cleNom] = true;
+        return true;
+      });
+
+      correspondances.sort(function (a, b) {
+        var nomA = String(a.nom || '').trim();
+        var nomB = String(b.nom || '').trim();
+        var commenceA = normaliser(nomA).indexOf(terme) === 0 ? 0 : 1;
+        var commenceB = normaliser(nomB).indexOf(terme) === 0 ? 0 : 1;
+        return commenceA - commenceB || nomA.localeCompare(nomB, 'fr');
+      });
+
+      correspondances.slice(0, 6).forEach(function (produit, index) {
+        var nom = String(produit.nom || '').trim();
+        var option = document.createElement('button');
+        option.type = 'button';
+        option.id = 'suggestion-produit-' + index;
+        option.className = 'suggestion-produit';
+        option.setAttribute('role', 'option');
+        option.setAttribute('aria-selected', 'false');
+        option.textContent = nom;
+        option.addEventListener('mousedown', function (evenement) { evenement.preventDefault(); });
+        option.addEventListener('click', function () {
+          selectionnerProduit(nom);
+        });
+        suggestions.appendChild(option);
+      });
+
+      suggestions.hidden = suggestions.children.length === 0;
+      recherche.setAttribute('aria-expanded', suggestions.hidden ? 'false' : 'true');
+      recherche.removeAttribute('aria-activedescendant');
+    }
+
+    function activerSuggestion(index) {
+      var options = suggestions.querySelectorAll('.suggestion-produit');
+      if (!options.length) return;
+      suggestionActive = (index + options.length) % options.length;
+      Array.prototype.forEach.call(options, function (option, i) {
+        var active = i === suggestionActive;
+        option.classList.toggle('active', active);
+        option.setAttribute('aria-selected', active ? 'true' : 'false');
+      });
+      recherche.setAttribute('aria-activedescendant', options[suggestionActive].id);
+    }
+
+    if (recherche) {
+      recherche.addEventListener('input', function () {
+        filtrer();
+        mettreAJourSuggestions();
+      });
+      recherche.addEventListener('keydown', function (evenement) {
+        if (evenement.key === 'ArrowDown' && suggestions && !suggestions.hidden) {
+          evenement.preventDefault();
+          activerSuggestion(suggestionActive + 1);
+          return;
+        }
+        if (evenement.key === 'ArrowUp' && suggestions && !suggestions.hidden) {
+          evenement.preventDefault();
+          activerSuggestion(suggestionActive < 0 ? suggestions.children.length - 1 : suggestionActive - 1);
+          return;
+        }
+        if (evenement.key === 'Escape' && suggestions && !suggestions.hidden) {
+          fermerSuggestions();
+          return;
+        }
+        if (evenement.key === 'Enter') {
+          if (suggestions && !suggestions.hidden && suggestions.children.length) {
+            evenement.preventDefault();
+            var index = suggestionActive >= 0 ? suggestionActive : 0;
+            suggestions.children[index].click();
+            return;
+          }
+          evenement.preventDefault();
+          enregistrerHistorique();
+        }
+      });
+      recherche.addEventListener('blur', function () {
+        window.setTimeout(function () {
+          if (!suggestions || !suggestions.contains(document.activeElement)) fermerSuggestions();
+        }, 100);
+      });
+    }
+    if (boutonEffacerHistorique) {
+      boutonEffacerHistorique.addEventListener('click', function () {
+        historique = [];
+        sauvegarderHistorique();
+        afficherHistorique();
+      });
+    }
+    if (filtreCategorie) filtreCategorie.addEventListener('change', function () {
+      filtrer();
+      mettreAJourSuggestions();
+    });
+    chargerHistorique();
 
     // On ne trie pas avec orderBy côté Firestore : certains anciens produits
     // peuvent ne pas avoir le champ creeLe. On récupère donc tous les produits
@@ -512,6 +707,7 @@
         });
 
         remplirCategories();
+        mettreAJourSuggestions();
         filtrer();
       })
       .catch(function (e) {
